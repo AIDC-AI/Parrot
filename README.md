@@ -18,7 +18,7 @@
 
 <p align="center">
   <a href=""><img src="https://img.shields.io/badge/Parrot-v1.0-darkcyan"></a>
-  <a href='https:/sun-hailong.github.io/projects/Parrot'><img src='https://img.shields.io/Project-Page-Green'></a>
+  <a href='https://sun-hailong.github.io/projects/Parrot'><img src='https://img.shields.io/badge/Project-Page-Green'></a>
   <a href='https://arxiv.org/abs/2406.02539'><img src='https://img.shields.io/badge/Arxiv-2406.02539-b31b1b.svg?logo=arXiv'></a>
   <a href=""><img src="https://img.shields.io/github/stars/AIDC-AI/Parrot?color=4fb5ee"></a>
   <a href=""><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAIDC-AI%2FParrot&count_bg=%23FFA500&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visitors&edge_flat=false"></a>
