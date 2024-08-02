@@ -1,0 +1,51 @@
+# rtp deploy
+/git_hash.txt
+/rtp
+
+# local debug on dsw
+*.args
+*.tmpargs
+
+# xdl config
+xdl_config_*.json
+
+#Qwen Dir
+!parrot/model/qwen_chat/**
+
+# Python
+__pycache__
+*.pyc
+*.egg-info
+dist
+
+# Log
+*.log
+*.log.*
+parrot/VLMEvalKit/logs/*.log
+
+# Data
+!**/alpaca-data-conversation.json
+
+# Editor
+.idea
+*.swp
+
+# Other
+.DS_Store
+wandb
+output
+
+checkpoints
+ckpts*
+
+.ipynb_checkpoints
+
+# DevContainer
+!.devcontainer/*
+
+# Demo
+serve_images/
+
+#
+/playground/data/eval
+/playground/logs/eval
