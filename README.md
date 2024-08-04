@@ -74,10 +74,8 @@ Parrot is a multilingual multimodal large language model. We provide our fully f
 
 | Model | Base LLM | Vision Encoder | Stage | Download |
 | --- | --- | :---: | :---: | :---: |
-| Parrot-7B | Qwen-1.5-7B-Chat | CLIP-ViT-Large-patch14-336 | Pretrain | [ckpt](https://huggingface.co/AIDC-AI/Parrot_S1_7B-Qwen15Clip) |
-| Parrot-7B | Qwen-1.5-7B-Chat | CLIP-ViT-Large-patch14-336 | SFT | [ckpt](https://huggingface.co/AIDC-AI/Parrot_S2_7B-Qwen15Clip) |
-| Parrot-14B | Qwen-1.5-14B-Chat | CLIP-ViT-Large-patch14-336 | Pretrain | [ckpt](https://huggingface.co/AIDC-AI/Parrot_S1_14B-Qwen15Clip) |
-| Parrot-14B | Qwen-1.5-14B-Chat | CLIP-ViT-Large-patch14-336 | SFT | [ckpt](https://huggingface.co/AIDC-AI/Parrot_S2_14B-Qwen15Clip) |
+| Parrot-7B | Qwen-1.5-7B-Chat | CLIP-ViT-Large-patch14-336 | SFT | [ckpt](https://huggingface.co/AIDC-AI/Parrot-7B) |
+| Parrot-14B | Qwen-1.5-14B-Chat | CLIP-ViT-Large-patch14-336 | SFT | [ckpt](https://huggingface.co/AIDC-AI/Parrot-14B) |
 
 <div align="center">
   <img src="./images/teaser.png" width="600px" />
