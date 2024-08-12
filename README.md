@@ -182,7 +182,7 @@ We provide a quick start demo in `parrot/deploy/runner.py`, which can be used as
 
 ## 👀 Team
 This work is a collaborative effort by the MarcoVL team. We would also like to provide links to the following MLLM papers from our team:
-- [Ovis: Structural Embedding Alignment for Multimodal Large Language Model](https://arxiv.org/pdf/2405.20797)
+- [Ovis: Structural Embedding Alignment for Multimodal Large Language Mdodel](https://arxiv.org/pdf/2405.20797)
 - [Wings: Learning Multimodal LLMs without Text-only Forgetting](https://arxiv.org/abs/2406.03496)
 
 ## 👨‍🏫 Acknowledgement
