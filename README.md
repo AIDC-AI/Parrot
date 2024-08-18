@@ -144,7 +144,7 @@ Below is an example of the folder structure. You can alter the folder structure 
 
 ## 🎄 MMMB
 
-We provide the MMMB benchmark at [Huggingface](https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/tree/main/mmmb). It contains 6 languages, 15 categories, and 12,000 questions. You can download the dataset and use it for your own experiments. We utilize the tsv file to store the dataset, and it is easy to evaluate using the `VLMEvalKit`.
+We provide the MMMB benchmark at [Huggingface](https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/tree/main/mmmb). It contains 6 languages, 15 categories, and 12,000 questions (Following the company's data review, it was identified that some of the data might contain non-compliant information, which could result in the total number of entries in the dataset being slightly fewer than 2,000.) You can download the dataset and use it for your own experiments. We utilize the tsv file to store the dataset, and it is easy to evaluate using the `VLMEvalKit`.
 
 <div align="center">
   <img src="./images/mmmb.png" width="600px" />
@@ -182,7 +182,7 @@ We provide a quick start demo in `parrot/deploy/runner.py`, which can be used as
 
 ## 👀 Team
 This work is a collaborative effort by the MarcoVL team. We would also like to provide links to the following MLLM papers from our team:
-- [Ovis: Structural Embedding Alignment for Multimodal Large Language Mdodel](https://arxiv.org/pdf/2405.20797)
+- [Ovis: Structural Embedding Alignment for Multimodal Large Language Model](https://arxiv.org/pdf/2405.20797)
 - [Wings: Learning Multimodal LLMs without Text-only Forgetting](https://arxiv.org/abs/2406.03496)
 
 ## 👨‍🏫 Acknowledgement
