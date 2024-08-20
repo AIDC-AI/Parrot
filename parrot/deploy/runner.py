@@ -78,9 +78,9 @@ class TestRunner(BaseRunner):
 
 
 if __name__ == '__main__':
-    model_path = '' # TODO: specify model_path
+    model_path = 'AIDC-AI/Parrot-7B'
     model_name = 'parrot_qwen2'
-    mm_vision_tower = '' # TODO: clip-vit-large-patch14-336
+    mm_vision_tower = 'openai/clip-vit-large-patch14-336' 
 
     # initialize runner
     runner = TestRunner(model_path, model_name, mm_vision_tower)
