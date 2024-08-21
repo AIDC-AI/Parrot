@@ -40,6 +40,7 @@ Welcome to Parrot [[paper](https://arxiv.org/abs/2406.02539)], a novel method th
 ```
 
 ## 📰 What's New
+- [08/21] 🔥 We have supported our multilingual MLLM **Parrot** in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit), now you can evaluate Parrot easily. Welcome to have a try!
 - [08/20] 🔥 We have supported **MMMB and Multilingual MMBench** in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit), now you can use the name `MMMB` and `MTL_MMBench_DEV` to obtain the results of 6 langs at the a time. Welcome to have a try!
 - [08/02] 🔥 We release the [code](https://github.com/AIDC-AI/Parrot), inhouse multilingual [dataset](https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/tree/main/sharegpt_4v), benchmark [MMMB](https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/tree/main/mmmb), and [model](https://huggingface.co/AIDC-AI/Parrot-7B), welcome to have a try!
 - [06/05] 🔥 Parrot is coming! We release the [paper](https://arxiv.org/abs/2406.02539)!
