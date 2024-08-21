@@ -1,32 +1,41 @@
-import copy
 import os
-import re
 
 import torch
 from PIL import Image
 from abc import abstractproperty
-import sys
-import os.path as osp
 from .base import BaseModel
+from ..dataset import DATASET_TYPE
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
-
-from parrot.model.parrot_arch import ParrotMetaForCausalLM
-from parrot.utils.constants import DEFAULT_IMAGE_TOKEN, BEGIN_LINE, END_LINE
-from parrot.model.conversation_formatter import ConversationFormatter
-from parrot.utils.mm_utils import process_images
 
 
 class Parrot(BaseModel):
     INSTALL_REQ = False
+    INTERLEAVE = False
 
-    def __init__(self, model_path, **kwargs):
+    def __init__(self, model_path='AIDC-AI/Parrot-7B', **kwargs):
+        try:
+            from parrot.model.parrot_arch import ParrotMetaForCausalLM
+            from parrot.utils.constants import DEFAULT_IMAGE_TOKEN, BEGIN_LINE, END_LINE
+            from parrot.model.conversation_formatter import ConversationFormatter
+            from parrot.utils.mm_utils import process_images
+        except:
+            warnings.warn('Please install Parrot before using Parrot')
+            warnings.warn('Please install Parrot from https://github.com/AIDC-AI/Parrot')
+            warnings.warn('Using `pip install -e . --no-deps` in the Parrot directory')
+            warnings.warn('Recommend to install transformers==4.39.0')
+            sys.exit(-1)
+
+        self.process_images = process_images
+        self.ConversationFormatter = ConversationFormatter
+        self.DEFAULT_IMAGE_TOKEN = DEFAULT_IMAGE_TOKEN
+        self.BEGIN_LINE = BEGIN_LINE
+        self.END_LINE = END_LINE
+
         try:
             model_name = 'parrot_qwen2'
-            mm_vision_tower = os.environ['ParrotVTPATH']
-            model, tokenizer, conversation_formatter = ParrotMetaForCausalLM.build(model_name, model_path,
-                                                                                  mm_vision_tower=mm_vision_tower)
-
+            model, tokenizer, conversation_formatter = ParrotMetaForCausalLM.build(
+                model_name, model_path, mm_vision_tower='openai/clip-vit-large-patch14-336'
+            )
             self.model = model.cuda()
             self.vision_tower = self.model.get_vision_tower()
             self.tokenizer = tokenizer
@@ -50,11 +59,25 @@ class Parrot(BaseModel):
         self.count = 0
 
     def use_custom_prompt(self, dataset):
-        return True
-        # assert dataset is not None
-        # if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'Y/N':
-        #     return True
-        # return False
+        if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ':
+            return True
+        return False
+
+    def build_prompt(self, line, dataset=None):
+        assert self.use_custom_prompt(dataset)
+        assert isinstance(dataset, str)
+        tgt_path = self.dump_image(line, dataset)
+
+        if DATASET_TYPE(dataset) == 'Y/N':
+            prompt = self.built_yorn_prompt(line, dataset)
+        elif DATASET_TYPE(dataset) == 'MCQ':
+            prompt = self.build_multi_choice_prompt(line, dataset)
+        else:
+            raise ValueError(f'Invalid dataset type: {DATASET_TYPE(dataset)}')
+
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=p) for p in tgt_path])
+        return message
 
     def built_yorn_prompt(self, line, dataset=None):
         prompt = line['question']
@@ -78,23 +101,22 @@ class Parrot(BaseModel):
             for cand in string.ascii_uppercase
             if cand in line and not pd.isna(line[cand])
         }
-        question = str(question)
         for key, item in options.items():
-            question += str(f'\n{key}. {item}')
+            question += f'\n{key}. {item}'
         prompt = question
 
         if len(options):
             default_prompt = "\nAnswer with the option's letter from the given choices directly."
-            if dataset[-3:] == '_zh' or cn_string(prompt):
-                default_prompt = "\n请直接用给定选项中的选项字母回答。"
+            if dataset[-3:] == '_cn' or cn_string(prompt):
+                default_prompt = '\n请直接用给定选项中的选项字母回答。'
             elif dataset[-3:] == '_pt':
-                default_prompt = "\nResponda diretamente com a letra da opção das escolhas dadas."
+                default_prompt = '\nResponda diretamente com a letra da opção das escolhas dadas.'
             elif dataset[-3:] == '_ar':
-                default_prompt = "\nأجب مباشرةً بحرف الخيار من الاختيارات المعطاة."
+                default_prompt = '\nأجب مباشرةً بحرف الخيار من الاختيارات المعطاة.'
             elif dataset[-3:] == '_ru':
-                default_prompt = "\nОтветьте буквой варианта из предложенных вариантов напрямую."
+                default_prompt = '\nОтветьте буквой варианта из предложенных вариантов напрямую.'
             elif dataset[-3:] == '_tr':
-                default_prompt = "\nVerilen seçeneklerden doğrudan seçeneğin harfi ile cevap verin."
+                default_prompt = '\nVerilen seçeneklerden doğrudan seçeneğin harfi ile cevap verin.'
             prompt += default_prompt
             # prompt += (
             #     '\n请直接回答选项字母。' if cn_string(prompt) else
@@ -106,45 +128,18 @@ class Parrot(BaseModel):
 
         return prompt
 
-    def built_vqa_prompt(self, line, dataset=None):
-        if listinstr(['MathVista', 'MMVet'], dataset):
-            prompt = line['question']
-        elif listinstr(['LLaVABench'], dataset):
-            prompt = line['question'] + '\nAnswer the question in detail.'
-        else:
-            prompt = line['question'] + '\nAnswer the question using a single word or phrase.'
-        return prompt
-
     def process_answer_prefix(self, answer, prefixes):
         for prefix in prefixes:
             if prefix in answer.lower():
                 return answer[answer.lower().find(prefix) + len(prefix):]
         return answer
 
-    def build_prompt(self, line, dataset=None):
-        assert self.use_custom_prompt(dataset)
-        assert dataset is None or isinstance(dataset, str)
-        tgt_path = self.dump_image(line, dataset)
-
-        if DATASET_TYPE(dataset) == 'Y/N':
-            prompt = self.built_yorn_prompt(line, dataset)
-        elif DATASET_TYPE(dataset) == 'multi-choice':
-            prompt = self.build_multi_choice_prompt(line, dataset)
-        elif DATASET_TYPE(dataset) == 'VQA':
-            prompt = self.built_vqa_prompt(line, dataset)
-        else:
-            raise ValueError('Invalid dataset type: {DATASET_TYPE(dataset)}')
-
-        message = [dict(type='text', value=prompt)]
-        message.extend([dict(type='image', value=p) for p in tgt_path])
-        return message
-
     def generate_inner(self, message, dataset=None):
         query, image_paths = self.prepare_inputs(message)
         images_list = [Image.open(image_path).convert('RGB') for image_path in image_paths]
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'
-        image_tensors = process_images(images_list, self.image_processor, args).cuda()
+        image_tensors = self.process_images(images_list, self.image_processor, args).cuda()
         prompt, input_ids = self.conversation_formatter.format_query(query)
         input_ids = input_ids.unsqueeze(0).cuda()
 
@@ -159,11 +154,12 @@ class Parrot(BaseModel):
         n_diff_input_output = (input_ids != output_ids[:, :input_token_len]).sum().item()
         if n_diff_input_output > 0:
             print(f'[Warning] {n_diff_input_output} output_ids are not the same as the input_ids')
-        response = self.tokenizer.batch_decode(output_ids[:, input_token_len:], skip_special_tokens=True)[0].strip(string.whitespace)
+        response = self.tokenizer.batch_decode(output_ids[:, input_token_len:],
+                                               skip_special_tokens=True)[0].strip(string.whitespace)
         answer = response
 
         if query.endswith("Answer with the option's letter from the given choices directly.") or query.endswith(
-                "请直接回答选项字母。"):
+                '请直接回答选项字母。'):
             qtype = 'multiple-choice'
             while True:
                 answer = answer.strip(string.punctuation + string.whitespace)
@@ -184,14 +180,14 @@ class Parrot(BaseModel):
         else:
             qtype = 'open'
 
-        if self.count % 10 == 0 and int(os.environ.get('LOCAL_RANK', '0')) == 0:
-            print(f'\n{BEGIN_LINE}')
+        if self.count % 50 == 0 and int(os.environ.get('LOCAL_RANK', '0')) == 0:
+            print(f'\n{self.BEGIN_LINE}')
             print(f'image_paths: {image_paths}\n')
             print(f'prompt: {prompt}\n')
             print(f'qtype: {qtype}\n')
             print(f'output: {response}\n')
             print(f'answer: {answer}\n')
-            print(f'{END_LINE}\n', flush=True)
+            print(f'{self.END_LINE}\n', flush=True)
 
         self.count += 1
 
@@ -210,10 +206,10 @@ class Parrot(BaseModel):
                 pure_text += msg['value']
             elif msg['type'] == 'image':
                 image_count += 1
-                prompt += DEFAULT_IMAGE_TOKEN
+                prompt += self.DEFAULT_IMAGE_TOKEN
                 image_paths.append(msg['value'])
 
         if image_count == 1 and text_count == 1:
-            prompt = DEFAULT_IMAGE_TOKEN + '\n' + pure_text
+            prompt = self.DEFAULT_IMAGE_TOKEN + '\n' + pure_text
 
         return prompt, image_paths

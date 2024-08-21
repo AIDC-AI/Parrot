@@ -4,6 +4,7 @@ from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
 from ..base import BaseModel
 from ...smp import *
+from ...dataset import DATASET_TYPE
 
 
 class StoppingCriteriaSub(StoppingCriteria):
@@ -17,9 +18,6 @@ class StoppingCriteriaSub(StoppingCriteria):
                 return True
 
         return False
-
-
-from ...utils import DATASET_TYPE
 
 
 class XComposer(BaseModel):
@@ -56,7 +54,7 @@ class XComposer(BaseModel):
                 message = [message[1], message[0]]
         kwargs = cp.deepcopy(self.kwargs)
         if dataset is not None:
-            if DATASET_TYPE(dataset) == 'multi-choice':
+            if DATASET_TYPE(dataset) == 'MCQ':
                 kwargs['max_new_tokens'] = 5
                 kwargs['num_beams'] = 5
 
@@ -94,7 +92,7 @@ class XComposer(BaseModel):
                 prompt_full += '<ImageHere>'
 
         prompt_full += self.model.eoh + ' <|Bot|>: '
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+        if dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt_full += 'Answer: The answer is '
         elif dataset is not None and DATASET_TYPE(dataset) in ['VQA', 'QA', 'Y/N']:
             prompt_full += 'Answer: '
@@ -103,7 +101,7 @@ class XComposer(BaseModel):
         assert len(prompt_segs) == len(img_embeds) + 1
 
         prompt_seg_tokens = [
-            self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=(i == 0)).to(self.device).input_ids
+            self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=(i == 0)).to(self.device).input_ids.long()
             for i, seg in enumerate(prompt_segs)
         ]
         prompt_seg_embs = [self.model.internlm_model.model.embed_tokens(seg) for seg in prompt_seg_tokens]
@@ -116,7 +114,7 @@ class XComposer(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 

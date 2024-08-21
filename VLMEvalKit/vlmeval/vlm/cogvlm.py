@@ -2,8 +2,46 @@ import torch
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
-from transformers import AutoModelForCausalLM, LlamaTokenizer
+from ..dataset import DATASET_TYPE
+from transformers import AutoModelForCausalLM, LlamaTokenizer, AutoTokenizer
+
+
+class GLM4v(BaseModel):
+
+    INSTALL_REQ = False
+    INTERLEAVE = False
+
+    def __init__(self, model_path='THUDM/glm-4v-9b', **kwargs):
+        assert model_path is not None
+        self.model_path = model_path
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True
+        ).to('cuda').eval()
+        gen_kwargs = {'max_length': 2048, 'do_sample': False}
+        gen_kwargs.update(kwargs)
+        self.kwargs = gen_kwargs
+        self.end_text_token = '<|endoftext|>'
+
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
+        image = Image.open(image_path).convert('RGB')
+        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
+            prompt += '\nShort Answer.'
+        inputs = self.tokenizer.apply_chat_template(
+            [{'role': 'user', 'image': image, 'content': prompt}],
+            add_generation_prompt=True, tokenize=True, return_tensors='pt', return_dict=True
+        )
+        inputs = inputs.to('cuda')
+
+        with torch.no_grad():
+            outputs = self.model.generate(**inputs, **self.kwargs)
+            outputs = outputs[:, inputs['input_ids'].shape[1]:]
+            response = self.tokenizer.decode(outputs[0])
+        return response.split(self.end_text_token)[0]
 
 
 class CogVlm(BaseModel):
@@ -11,21 +49,30 @@ class CogVlm(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(self,
-                 name='cogvlm-chat',
-                 tokenizer_name='lmsys/vicuna-7b-v1.5',
-                 **kwargs):
-        self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name)
-        self.kwargs = kwargs
-        self.model = AutoModelForCausalLM.from_pretrained(
-            f'THUDM/{name}-hf',
+    def __init__(self, model_path='THUDM/cogvlm2-llama3-chat-19B', tokenizer_name=None, **kwargs):
+        assert model_path is not None
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
         ).to('cuda').eval()
 
+        self.kwargs = kwargs
+        if tokenizer_name:
+            tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name)
+            gen_kwargs = {'max_length': 2048, 'do_sample': False}
+            self.end_text_token = '</s>'
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+            gen_kwargs = {'max_new_tokens': 2048, 'pad_token_id': 128002}
+            self.end_text_token = '<|end_of_text|>'
+        self.kwargs.update(gen_kwargs)
+        self.tokenizer = tokenizer
+        self.model = model
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
@@ -34,7 +81,7 @@ class CogVlm(BaseModel):
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
 
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+        if dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             question = line['question']
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
             if hint is not None:
@@ -62,7 +109,9 @@ class CogVlm(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
+        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
+            prompt += '\nShort Answer.'
 
         image = Image.open(image_path).convert('RGB')
         inputs = self.model.build_conversation_input_ids(
@@ -73,12 +122,10 @@ class CogVlm(BaseModel):
             'attention_mask': inputs['attention_mask'].unsqueeze(0).to('cuda'),
             'images': [[inputs['images'][0].to('cuda').to(torch.bfloat16)]],
         }
-        gen_kwargs = {'max_length': 2048, 'do_sample': False}
-        gen_kwargs.update(self.kwargs)
 
         with torch.no_grad():
-            outputs = self.model.generate(**inputs, **gen_kwargs)
+            outputs = self.model.generate(**inputs, **self.kwargs)
             outputs = outputs[:, inputs['input_ids'].shape[1]:]
             response = self.tokenizer.decode(outputs[0])
-        response = response.split('</s>')[0].strip()
+        response = response.split(self.end_text_token)[0].strip()
         return response

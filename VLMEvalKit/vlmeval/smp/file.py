@@ -9,6 +9,60 @@ import time
 import numpy as np
 import validators
 import mimetypes
+import multiprocessing as mp
+from .misc import toliststr
+from .vlm import decode_base64_to_image_file
+
+
+def decode_img_omni(tup):
+    root, im, p = tup
+    images = toliststr(im)
+    paths = toliststr(p)
+    if len(images) > 1 and len(paths) == 1:
+        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+
+    assert len(images) == len(paths)
+    paths = [osp.join(root, p) for p in paths]
+    for p, im in zip(paths, images):
+        if osp.exists(p):
+            continue
+        if isinstance(im, str) and len(im) > 64:
+            decode_base64_to_image_file(im, p)
+    return paths
+
+
+def localize_df(data, dname, nproc=32):
+    assert 'image' in data
+    indices = list(data['index'])
+    indices_str = [str(x) for x in indices]
+    images = list(data['image'])
+    image_map = {x: y for x, y in zip(indices_str, images)}
+
+    root = LMUDataRoot()
+    root = osp.join(root, 'images', dname)
+    os.makedirs(root, exist_ok=True)
+
+    if 'image_path' in data:
+        img_paths = list(data['image_path'])
+    else:
+        img_paths = []
+        for i in indices_str:
+            if len(image_map[i]) <= 64:
+                idx = image_map[i]
+                assert idx in image_map and len(image_map[idx]) > 64
+                img_paths.append(f'{idx}.jpg')
+            else:
+                img_paths.append(f'{i}.jpg')
+
+    tups = [(root, im, p) for p, im in zip(img_paths, images)]
+
+    pool = mp.Pool(32)
+    ret = pool.map(decode_img_omni, tups)
+    pool.close()
+    data.pop('image')
+    if 'image_path' not in data:
+        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
+    return data
 
 
 def LMUDataRoot():
@@ -20,13 +74,28 @@ def LMUDataRoot():
     return root
 
 
-def MMBenchOfficialServer():
+def MMBenchOfficialServer(dataset_name):
     root = LMUDataRoot()
-    for dataset in ['MMBench', 'MMBench_CN', 'MMBench_TEST_EN', 'MMBench_TEST_CN']:
-        if osp.exists(f'{root}/{dataset}.tsv'):
-            data = load(f'{root}/{dataset}.tsv')
+
+    if dataset_name in ['MMBench', 'MMBench_V11', 'MMBench_CN', 'MMBench_CN_V11']:
+        ans_file = f'{root}/{dataset_name}.tsv'
+        if osp.exists(ans_file):
+            data = load(ans_file)
             if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
                 return True
+
+    if dataset_name in ['MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMBench_TEST_EN_V11', 'MMBench_TEST_CN_V11']:
+        ans_file1 = f'{root}/{dataset_name}.tsv'
+        mapp = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_CN': 'MMBench_CN',
+            'MMBench_TEST_EN_V11': 'MMBench_V11', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11',
+        }
+        ans_file2 = f'{root}/{mapp[dataset_name]}.tsv'
+        for f in [ans_file1, ans_file2]:
+            if osp.exists(f):
+                data = load(f)
+                if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
+                    return True
     return False
 
 
@@ -118,9 +187,24 @@ def download_file(url, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
 
-    with DownloadProgressBar(unit='B', unit_scale=True,
-                             miniters=1, desc=url.split('/')[-1]) as t:
-        urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    # If HF_ENDPOINT is set, replace huggingface.co with it
+    if 'huggingface.co' in url and os.environ.get('HF_ENDPOINT', '') != '':
+        url = url.replace('huggingface.co', os.environ['HF_ENDPOINT'].split('://')[1])
+
+    try:
+        with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
+            urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    except:
+        # Handle Failed Downloads from huggingface.co
+        if 'huggingface.co' in url:
+            url_new = url.replace('huggingface.co', 'hf-mirror.com')
+            try:
+                os.system(f'wget {url_new} -O {filename}')
+            except:
+                raise Exception(f'Failed to download {url}')
+        else:
+            raise Exception(f'Failed to download {url}')
+
     return filename
 
 
@@ -194,7 +278,7 @@ def last_modified(pth):
 
 
 def parse_file(s):
-    if osp.exists(s):
+    if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
         mime = mimetypes.types_map.get(suffix, 'unknown')
@@ -212,3 +296,20 @@ def parse_file(s):
             return ('url', s)
     else:
         return (None, s)
+
+
+def file_size(f, unit='GB'):
+    stats = os.stat(f)
+    div_map = {
+        'GB': 2 ** 30,
+        'MB': 2 ** 20,
+        'KB': 2 ** 10,
+    }
+    return stats.st_size / div_map[unit]
+
+
+def parquet_to_tsv(file_path):
+    data = pd.read_parquet(file_path)
+    pth = '/'.join(file_path.split('/')[:-1])
+    data_name = file_path.split('/')[-1].split('.')[0]
+    data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)
