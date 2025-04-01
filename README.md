@@ -21,10 +21,10 @@
   <a href='https://sun-hailong.github.io/projects/Parrot'><img src='https://img.shields.io/badge/Project-Page-Green'></a>
   <a href='https://arxiv.org/abs/2406.02539'><img src='https://img.shields.io/badge/Arxiv-2406.02539-b31b1b.svg?logo=arXiv'></a>
   <a href=""><img src="https://img.shields.io/github/stars/AIDC-AI/Parrot?color=4fb5ee"></a>
-  <a href=""><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAIDC-AI%2FParrot&count_bg=%23FFA500&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visitors&edge_flat=false"></a>
-</p>
+  <!-- <a href=""><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAIDC-AI%2FParrot&count_bg=%23FFA500&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visitors&edge_flat=false"></a> -->
+  <a href="https://hits.sh/github.com/AIDC-AI/Parrot/"><img alt="Hits" src="https://hits.sh/github.com/AIDC-AI/Parrot.svg?view=today-total"/></a>
 
-> Thanks to [Hai-Long Sun](https://github.com/sun-hailong) for his contribution in Parrot!
+</p>
 
 ## 🎉 Introduction
 Welcome to Parrot [[paper](https://arxiv.org/abs/2406.02539)], a novel method that utilizes textual guidance to drive visual token alignment at the language level. Parrot makes the visual tokens condition on diverse language inputs and uses Mixture-of-Experts (MoE) to promote the alignment of multilingual tokens. Moreover, considering the current lack of benchmarks for evaluating multilingual capabilities within the field, we collect and make available a Massive Multilingual Multimodal Benchmark which includes 6 languages, 15 categories, and 12,000 questions, named as MMMB.
