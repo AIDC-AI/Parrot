@@ -22,7 +22,7 @@
   <a href='https://arxiv.org/abs/2406.02539'><img src='https://img.shields.io/badge/Arxiv-2406.02539-b31b1b.svg?logo=arXiv'></a>
   <a href=""><img src="https://img.shields.io/github/stars/AIDC-AI/Parrot?color=4fb5ee"></a>
   <!-- <a href=""><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAIDC-AI%2FParrot&count_bg=%23FFA500&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visitors&edge_flat=false"></a> -->
-  <a href="https://hits.sh/github.com/AIDC-AI/Parrot/"><img alt="Hits" src="https://hits.sh/github.com/AIDC-AI/Parrot.svg?view=today-total"/></a>
+<!--   <a href="https://hits.sh/github.com/AIDC-AI/Parrot/"><img alt="Hits" src="https://hits.sh/github.com/AIDC-AI/Parrot.svg?view=today-total"/></a> -->
 
 </p>
 
@@ -31,15 +31,16 @@ Welcome to Parrot [[paper](https://arxiv.org/abs/2406.02539)], a novel method th
 
 **If you find Parrot useful for your research and applications, please cite using this BibTeX:**
 ```bibtex
-@article{sun2024parrot,
+@inproceedings{sun2025parrot,
   title={Parrot: Multilingual Visual Instruction Tuning},
   author={Sun, Hai-Long and Zhou, Da-Wei and Li, Yang and Lu, Shiyin and Yi, Chao and Chen, Qing-Guo and Xu, Zhao and Luo, Weihua and Zhang, Kaifu and Zhan, De-Chuan and others},
-  journal={arXiv preprint arXiv:2406.02539},
-  year={2024}
+  booktitle={ICML},
+  year={2025}
 }
 ```
 
 ## 📰 What's New
+- [05/01] 🔥 Parrot is accepted by ICML 2025.
 - [08/21] 🔥 We have supported our multilingual MLLM **Parrot** in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit), now you can evaluate Parrot easily. Welcome to have a try!
 - [08/20] 🔥 We have supported **MMMB and Multilingual MMBench** in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit), now you can use the name `MMMB` and `MTL_MMBench_DEV` to obtain the results of 6 langs at the a time. Welcome to have a try!
 - [08/02] 🔥 We release the [code](https://github.com/AIDC-AI/Parrot), inhouse multilingual [dataset](https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/tree/main/sharegpt_4v), benchmark [MMMB](https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/tree/main/mmmb), and [model](https://huggingface.co/AIDC-AI/Parrot-7B), welcome to have a try!
