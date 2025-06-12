@@ -198,6 +198,3 @@ This work is a collaborative effort by the MarcoVL team. We would also like to p
 
 If there are any questions, please feel free to propose new features by opening an issue or contacting the author: **Hai-Long Sun**([sunhl@lamda.nju.edu.cn](mailto:sunhl@lamda.nju.edu.cn)). Enjoy the code!
 
-## 🚀 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=AIDC-AI/Parrot&type=Date)](https://star-history.com/#AIDC-AI/Parrot&Date)
